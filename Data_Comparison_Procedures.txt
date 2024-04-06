@@ -1,0 +1,34 @@
+CREATE PROCEDURE QA_CompareData
+(
+    @tableName1 NVARCHAR(255),
+    @tableName2 NVARCHAR(255),
+    @productidColumn NVARCHAR(255),
+    @sitecolumn NVARCHAR(255),
+    @priceColumn NVARCHAR(255),
+    @zipColumn NVARCHAR(255)
+)
+AS
+BEGIN
+    DECLARE @sql NVARCHAR(MAX);
+    SET @zipColumn = REPLACE(@zipColumn, ' ', '');
+    SET @zipColumn = CAST(@zipColumn AS NVARCHAR(255));
+ 
+    SET @sql = N'
+ 
+    SELECT TOP 500 *
+    FROM ' + QUOTENAME(@tableName1) + ' AS a
+    INNER JOIN ' + QUOTENAME(@tableName2) + ' AS b
+    ON a.' + QUOTENAME(@productidColumn) + ' = b.' + QUOTENAME(@productidColumn) + '
+    AND REPLACE(a.zip, '' '', '''') = REPLACE(b.zip, '' '', '''') 
+    AND a.' + QUOTENAME(@sitecolumn) + ' = b.' + QUOTENAME(@sitecolumn) + '
+    WHERE a.' + QUOTENAME(@priceColumn) + ' <> b.' + QUOTENAME(@priceColumn) + '
+    AND REPLACE(a.zip, '' '', '''') = @zipColumn';
+ 
+    EXEC sp_executesql @sql, N'@zipColumn NVARCHAR(255)', @zipColumn;
+END;
+
+ 
+
+exec QA_CompareData 'backup_Albertsonsmarket_09_25_2023','backup_Albertsonsmarket_09_18_2023','product_id','site','price','75034';
+ 
+EXEC QA_CompareData 'Backup_provigo_09_21_2023', 'Backup_provigo_09_14_2023', 'product_id', 'extra1', 'price', 'H4B 1N3';
